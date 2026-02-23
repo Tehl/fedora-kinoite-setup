@@ -91,20 +91,94 @@ nvidia-580xx-kmod
 xorg-x11-drv-nvidia-580xx
 ```
 
-# Mullvad VPN
+# Media Codecs
+To replace the limited `ffmpeg-free` package provided by Fedora with the `ffmpeg` package offered by RPMFusion, we also need to remove anything which will conflict with the full package's dependencies:
+
 ```bash
-$ curl --tlsv1.3 -fsS https://repository.mullvad.net/rpm/stable/mullvad.repo | sudo tee /etc/yum.repos.d/mullvad.repo
-$ rpm-ostree update --install mullvad-vpn
+$ rpm-ostree override remove \
+    ffmpeg-free \
+    libavcodec-free \
+    libavdevice-free \
+    libavfilter-free \
+    libavformat-free \
+    libavutil-free \
+    libpostproc-free \
+    libswresample-free \
+    libswscale-free \
+    --install ffmpeg
+$ systemctl reboot
+```
+
+# Virtual Surround Sound
+Fedora uses [Pipewire](https://pipewire.org/) already, and [filter chains](https://gitlab.freedesktop.org/pipewire/pipewire/-/wikis/Filter-Chain) can be used to configure effects like virtual surround sound, similar to [HeSuVi](https://sourceforge.net/projects/hesuvi/) on Windows.
+
+Applying a head-related transfer function (HRTF) to an audio stream will move the peak gain away from 0dB, so ideally we want to also apply a loudness correction to avoid clipping or distortion. Pipewire provides percentage volume adjustment, but for loudness we need a plugin. LADSPA provides a [stereo loudness compensator](https://lsp-plug.in/?page=manuals&section=loud_comp_stereo) which we can use for this purpose:
+
+```bash
+$ rpm-ostree install lsp-plugins-ladspa
+$ systemctl reboot
+```
+
+[My configuration](.config/pipewire/pipewire.conf.d/sink-virtual-surround-7.1-hesuvi.conf) is based on Dolby Atmos 7.1 (without reverb), which requires a loudness correction of -5.9dB. This is mixed down from 7.1 to stereo; I also use an [alternative configuration](.config/pipewire/pipewire.conf.d/sink-virtual-surround-7.1-hesuvi-mono.conf) which cross-feeds the stereo output to approximate a mono signal, which I use when only wearing one earpiece. This mono output requires an additional -6dB adjustment to offset the additive signal mixing.
+
+How much correction is needed will differ by HRTF; the above values are based on suggestions from EqualizerAPO on Windows when using the same configuration, so your mileage may vary when trying to find the correct adjustments to make.
+
+With the appropriate `.conf` and `.wav` files copied to `~/.config/pipewire/pipewire.d`, the new sinks will appear after restarting pipewire:
+
+```bash
+$ systemctl --user restart pipewire.service
+```
+
+ref: [vukilis.com](https://vukilis.com/my-hesuvi-configuration-on-linux/)
+
+ref: [artefact2.com](https://artefact2.com/b/20220408-pipewire-loudness.xhtml)
+
+ref: [HTRF Database](https://airtable.com/appayGNkn3nSuXkaz/shruimhjdSakUPg2m/tbloLjoZKWJDnLtTc)
+
+# Fan Controls
+[CoolerControl](https://docs.coolercontrol.org/) is distributed on Copr, so we need to enable the repository before we can install it. Since we can't use `dnf copr enable` on an atomic desktop, we need to download the repo definition to `yum.repos.d` manually:
+
+```bash
+$ curl -tlsv1.3 -fsS \
+    https://copr.fedorainfracloud.org/coprs/codifryed/CoolerControl/repo/fedora-$(rpm -E %fedora)/codifryed-CoolerControl-fedora-$(rpm -E %fedora).repo \
+    | sudo tee /etc/yum.repos.d/codifryed-CoolerControl-fedora-$(rpm -E %fedora).repo
+$ rpm-ostree refresh-md
+$ rpm-ostree install liquidctl lm_sensors coolercontrol
 $ systemctl reboot
 ```
 ```bash
-$ systemctl enable --now mullvad-daemon.service
+sudo systemctl enable --now coolercontrold
+```
+
+**Note on installed packages:** `lm_sensors` provides access to many devices which have kernel-level drivers available, while `liquidctl` implements support for a range of USB pumps and coolers.
+
+My Lian-Li TL fans aren't supported by either package, so I needed to write a liquidctl plugin myself in order to get them working. This will be submitted for a future release of that tool.
+
+# NTSync
+The [NTSync](https://docs.kernel.org/next/userspace-api/ntsync.html) kernel module is present in Fedora 43, but not loaded by default. In Fedora 44 it will be loaded automatically when certain packages like Steam are installed, but for now we can add it to `modules-load.d` ourselves:
+
+```bash
+$ echo ntsync | sudo tee /etc/modules-load.d/ntsync.conf
+```
+
+ref: [pagure.io](https://pagure.io/fesco/issue/3510)
+# Mullvad VPN
+```bash
+$ curl --tlsv1.3 -fsS \
+    https://repository.mullvad.net/rpm/stable/mullvad.repo \
+    | sudo tee /etc/yum.repos.d/mullvad.repo
+$ rpm-ostree refresh-md
+$ rpm-ostree install mullvad-vpn
+$ systemctl reboot
+```
+```bash
+$ sudo systemctl enable --now mullvad-daemon.service
 ```
 ref: [github.com/boredsquirrel](https://github.com/boredsquirrel/MullvadVPN-Tricks)
 
 **Note:**
 If you want to block access to the internet while not connected to Mullvad, you should also run
 ```bash
-$ systemctl enable --now mullvad-early-boot-blocking.service
+$ sudo systemctl enable --now mullvad-early-boot-blocking.service
 ```
 Make sure to log into the Mullvad client and set up your device credentials before enabling the blocking service, otherwise you won't be able to connect.
