@@ -63,6 +63,8 @@ $ rm akmods-keys-0.0.2-8.fc$(rpm -E %fedora).noarch.rpm
 
 ref: [github.com/CheariX](https://github.com/CheariX/silverblue-akmods-keys)
 
+**Note:** installing a BIOS update will remove the custom Machine Owner Key, and the OS will fail to boot. To fix this, temporarily disable SecureBoot and re-run `sudo mokutil --import /etc/pki/akmods/certs/public_key.der` to re-enroll the MOK.
+
 ## 3. Install the Nvidia drivers from RPMFusion
 Now that our modified kernel can be signed, we can install the drivers from RPMFusion.
 ```bash
