@@ -1,6 +1,6 @@
 
 # fedora-kinoite-setup
-Personal setup notes for Fedora 43 Kinoite Atomic Desktop.
+Personal setup notes for Fedora 44 Kinoite Atomic Desktop.
 
 ## Why immutable Linux?
 Much of my recent Linux experience has been either producing containerised applications at work, or hosting them as part of my home lab. As such I have a passing familiarity with how a Linux OS hangs together, but haven't really used it as a daily driver. And as a long-time Windows user, I'm also used to needing to clear down and reinstall everything every few years to keep things running smoothly.
@@ -157,7 +157,7 @@ sudo systemctl enable --now coolercontrold
 My Lian-Li TL fans aren't supported by either package, so I needed to write a liquidctl plugin myself in order to get them working. This will be submitted for a future release of that tool.
 
 # NTSync
-The [NTSync](https://docs.kernel.org/next/userspace-api/ntsync.html) kernel module is present in Fedora 43, but not loaded by default. In Fedora 44 it will be loaded automatically when certain packages like Steam are installed, but for now we can add it to `modules-load.d` ourselves:
+The [NTSync](https://docs.kernel.org/next/userspace-api/ntsync.html) kernel module is present in Fedora 44, but not loaded by default unless [certain packages](https://fedoraproject.org/wiki/Changes/NTSYNC-Contained) are installed. Since we're mostly installing software via Flatpak this won't be triggered, but we can add it to `modules-load.d` ourselves instead:
 
 ```bash
 $ echo ntsync | sudo tee /etc/modules-load.d/ntsync.conf
@@ -184,3 +184,20 @@ If you want to block access to the internet while not connected to Mullvad, you 
 $ sudo systemctl enable --now mullvad-early-boot-blocking.service
 ```
 Make sure to log into the Mullvad client and set up your device credentials before enabling the blocking service, otherwise you won't be able to connect.
+
+# Upgrade major distro version
+To upgrade to the next major version of Fedora, we rebase our deployment using `rpm-ostree`. After making sure all the installed packages are up to date, we first pin our current deployment to provide a rollback route, and then select and deploy the correct variant. This can also be used to e.g. switch to a different desktop spin such as Silverblue.
+
+```bash
+$ rpm-ostree upgrade
+$ systemctl reboot
+```
+```bash
+$ sudo ostree admin pin 0
+$ source /etc/os-release
+$ ostree remote refs ${ID} | grep $(arch) | grep ${VARIANT_ID}
+$ rpm-ostree rebase fedora:fedora/44/x86_64/kinoite
+$ systemctl reboot
+```
+
+ref: [docs.fedoraproject.org](https://docs.fedoraproject.org/en-US/atomic-desktops/updates-upgrades-rollbacks/#upgrading)
