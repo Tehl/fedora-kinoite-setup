@@ -164,6 +164,23 @@ $ echo ntsync | sudo tee /etc/modules-load.d/ntsync.conf
 ```
 
 ref: [pagure.io](https://pagure.io/fesco/issue/3510)
+
+# Distrobox vs Toolbx
+Fedora Atomic comes with [toolbx](https://containertoolbx.org/) pre-installed, but [distrobox](https://distrobox.it/) has some nice usability features such as the ability to remap the home directory for the container, and manifest files to create and manage containers in a declarative fashion. Both tools use `podman` under the hood so there's no issue with both being installed together.
+
+```bash
+$ rpm-ostree upgrade --install distrobox
+$ systemctl reboot
+```
+
+We can now create our mutable workspace by entering the working directory with our [distrobox.ini](distrobox.ini) file and running
+
+```bash
+$ distrobox assemble create -R
+```
+
+which is also how we'll update any of the programs deployed to that container. Note that we can export applications from the container to be available directly in our main desktop environment.
+
 # Mullvad VPN
 ```bash
 $ curl --tlsv1.3 -fsS \
