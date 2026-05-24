@@ -32,35 +32,49 @@ $ sudo flatpak override \
 ```
 
 # Arknights: ENDFIELD
+```
 dwproton-10.0-15-x86_64
+```
 
 # EVE Online
+```
 GE-Proton-Latest
 
 PROTON_USE_NTSYNC=1
 LD_PRELOAD=
+```
 
 # Guild Wars 2
+```
 Kron4ek wine-11.5-staging-tkg-amd64
 DXVK v2.7.1-1-gplasync
 
 winetricks: tahoma
+```
 
 # Return of Reckoning
 https://cdn2.steamgriddb.com/grid/516625bd0e26a4f2cf4c06607a97c9f5.png
+```
 GE-Proton-Latest
 
 winetricks: corefonts d3dx9_34 d3dcompiler_47
+```
 
 # Where Winds Meet
+```
 Kron4ek wine-11.3-staging-tkg-amd64
 DXVK v2.7.1-1-gplasync
 
 nb wine 11.5 crashes during startup
+```
 
 # Wuthering Waves
 https://cdn2.steamgriddb.com/grid/9cc0716a65678b1053cdf9bf281807c2.jpg
+
 https://codeberg.org/mkrsym1/jadeite/issues/69
+
 https://copr.fedorainfracloud.org/coprs/adrianl40/bbe
 
+```
 winetricks: corefonts
+```
